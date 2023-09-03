@@ -1,0 +1,6 @@
+*.exe
+*.dll
+.vs
+__pycache__
+Debug
+Release
