@@ -15,12 +15,12 @@ TODO :
     - Add resources
     - Change PE metadata (company, description, etc...)
     - Random Windows API calls (help)
+    - Code signing (optional)
 
 Done :
     - RunPE
     - Junk code
     - Control flow
-    - Code signing
     - IAT obfuscation (adding "normal" imports in addition to the others)
 """
 
@@ -28,7 +28,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QCoreApplication
 from obfuscation import obfuscate
-from sign import sign
 import os, shutil
 
 class Ui_mainWindow(object):
@@ -180,11 +179,7 @@ class Ui_mainWindow(object):
         if return_code :
             self.label_2.setText("build failed.")
             QCoreApplication.processEvents()   
-        else :
-            self.label_2.setText("Signing the file...")
-            QCoreApplication.processEvents()
-            sign(out_filename)
-        
+
         # Cleaning up..
         os.remove("main.cpp")
         os.rename("DO_NOT_TOUCH.cpp", "main.cpp")
