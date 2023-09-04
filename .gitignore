@@ -4,3 +4,5 @@
 __pycache__
 Debug
 Release
+config.h
+sample.h

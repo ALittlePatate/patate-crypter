@@ -117,6 +117,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions>/NXCOMPAT:no %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateWindowsMetadata>true</GenerateWindowsMetadata>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -156,7 +157,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="sample.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DllExecutor.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

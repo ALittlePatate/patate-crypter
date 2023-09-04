@@ -13,7 +13,6 @@ TODO :
     - Good entropy
     - Good Section sizes
     - Add resources
-    - Change PE metadata (company, description, etc...)
     - Random Windows API calls (help)
     - Code signing (optional)
 
@@ -22,12 +21,14 @@ Done :
     - Junk code
     - Control flow
     - IAT obfuscation (adding "normal" imports in addition to the others)
+    - Change PE metadata (company, description, etc...)
 """
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QCoreApplication
 from obfuscation import obfuscate
+from metadata import change_metadata
 import os, shutil
 
 class Ui_mainWindow(object):
@@ -165,6 +166,13 @@ class Ui_mainWindow(object):
         self.label_2.setText("Adding junk code...")
         QCoreApplication.processEvents()
         obfuscate(self.spinBox.value(), self.spinBox_2.value(), self.cflow, self.junk)
+        self.label_2.setText("done.")
+        QCoreApplication.processEvents()
+        
+        self.label_2.setText("Changing metadata...")
+        QCoreApplication.processEvents()
+        change_metadata()
+        
         self.label_2.setText("done.")
         QCoreApplication.processEvents()
         
