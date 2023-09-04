@@ -141,18 +141,14 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
             if idx+1 < len(lines)-1 and "//END" in lines[idx+1] or "//END" in line:
                 in_func = False
                 wait_for_func_close = True
-                print(f"continue1 {in_func} {line}")
                 continue
             if wait_for_func_close and "}" in line :
                 in_func = False
                 wait_for_func_close = False
-                print(f"continue2 {in_func} {line}")
                 continue
             if wait_for_func_close :
-                print(f"continue3 {in_func} {line}")
                 continue
             
-            print(in_func, line)
             if "//START" in line : in_func = True
             if "/*" in line : in_comment = True
             elif "*/" in line : in_comment = False

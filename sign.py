@@ -73,8 +73,7 @@ def sign(filename) :
     signed_exe = exe_data + signature
 
     # Save the signed .exe file
-    signed_exe_filename = 'sample_out.exe'
-    with open(signed_exe_filename, 'wb') as signed_exe_file:
+    with open(filename, 'wb') as signed_exe_file:
         signed_exe_file.write(signed_exe)
 
     print(f"Successfully signed {filename}.")
