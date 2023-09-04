@@ -241,13 +241,25 @@ void decrypt(const char* key) {
 	//END
 }
 
-int main(void)
-{
+void allo() {
 	//START
-
     AllocConsole();
     FILE* fp;
     freopen_s(&fp, "CONOUT$", "w", stdout); // output only
+	//END
+}
+
+#ifdef _DEBUG
+int main(void)
+#else
+int __stdcall WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR     lpCmdLine,int       nShowCmd)
+#endif
+{
+	//START
+
+#ifdef _DEBUG
+    allo();
+#endif
 
     DEBUG_PRINTF("[+] Started\n");
     // Load the DLL from a buffer in memory

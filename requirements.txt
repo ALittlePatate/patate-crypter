@@ -1,0 +1,2 @@
+OpenSSL
+pywin32==302

@@ -1,53 +1,14 @@
 import os, string, re
+from randomness import *
 
 """
 Creates :
     - Random variables (local and globals)
     - Random operations on globals
+    - Random function definitions
+    - Random function calls
+    - Random control flow
 """
-
-def GetRandomBool() :
-    result = os.urandom(3)
-    r= sum(result) < 381.04
-    return r #average
-
-def GetRandomNumber() :
-    result = os.urandom(4)
-    return int(sum(result))
-
-def GetRandomRange(a, b):
-    if a > b:
-        a, b = b, a  # Swap a and b if a is greater than b
-
-    range_size = b - a + 1  # Calculate the size of the range
-
-    # Calculate the number of bits required to represent all values in the range
-    num_bits = 0
-    while 2 ** num_bits < range_size:
-        num_bits += 1
-
-    # Generate a random number in binary representation using GetRandomBool()
-    random_binary = [GetRandomBool() for _ in range(num_bits)]
-
-    # Convert the binary representation to an integer within the specified range
-    random_integer = 0
-    for i, bit in enumerate(random_binary):
-        random_integer += bit * (2 ** i)
-
-    # Map the generated integer to the desired range [a, b]
-    mapped_value = a + random_integer
-    if mapped_value > b : return GetRandomRange(a, b)
-    
-    return mapped_value
-
-def GetRandomString(l) :
-    letters = string.ascii_lowercase
-    s = ""
-    while len(s) < l :
-        r = GetRandomRange(0, len(letters)-1)
-        s += letters[r]
-
-    return s
 
 types = ["short", "unsigned short", "int", "unsigned int", "long", "unsigned long", "float", "double"]
 operations = ["-", "+", "^", "*", "/"]
@@ -59,7 +20,7 @@ def GetRandomVar() :
     global global_vars
     global in_func
     vtype = types[GetRandomRange(0, len(types)-1)]
-    vname = GetRandomString(10)
+    vname = GetRandomString(15)
     t = vtype + " " + vname + " = "
     
     val = str(GetRandomNumber())
@@ -95,7 +56,7 @@ def GetRandomOperation() :
 
 def GetRandomFunction() :
     global functions
-    name = GetRandomString(6)
+    name = GetRandomString(15)
     functions.append(name)
     
     body = "int "+name+"(const char* a1) {\n"
@@ -109,9 +70,50 @@ def CallRandomFunction() :
     if len(functions) < 1 : return ""
     
     sub = functions[GetRandomRange(0, len(functions)-1)]
-    return "int " + GetRandomString(6) + " = " + sub + "(\""+GetRandomString(5)+"\");"
+    return "int " + GetRandomString(15) + " = " + sub + "(\""+GetRandomString(10)+"\");"
 
-def obfuscate(PASS) :
+def GetAsmBlock(branch1, branch2, var, end, sub) :
+    asm_block = """\n\t\tcmp eax, """+str(GetRandomNumber())+"""
+		jne """+branch1+"""
+		jmp """+branch2+"""
+	"""+branch1+""":"""
+    
+    
+    if GetRandomRange(0, 4) > 1 :
+        branch1 = GetRandomString(20)
+        branch2_ = GetRandomString(20)
+        asm_block += GetAsmBlock(branch1, branch2_, var, end, sub)
+        
+    asm_block += "\n\t"+branch2+":\n\t\tmov eax, "+var+"\n\t\tcall "+sub
+
+    return asm_block
+
+def GetRandomAssemblyBlock() :
+    global functions
+    if len(functions) < 1 : return ""
+    sub = functions[GetRandomRange(0, len(functions)-1)]
+
+    branch1 = GetRandomString(20)
+    branch2 = GetRandomString(20)
+    end = GetRandomString(20)
+    var = GetRandomString(15)
+
+    r = """const char* """+var+""" = \""""+GetRandomString(5)+"""\";\n__asm {"""
+    
+    for i in range(GetRandomRange(0, 30)) :
+        branch1 = GetRandomString(20)
+        branch2 = GetRandomString(20)
+        end = GetRandomString(20)
+        r += GetAsmBlock(branch1, branch2, var, end, sub)
+    
+    r += """\n};"""
+    return r
+
+def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
+    if PASS < CFLOW_PASS : PASS = CFLOW_PASS
+    
+    if not cflow and not junk : PASS = 0
+    
     global global_vars
     global functions
     global in_func
@@ -120,24 +122,37 @@ def obfuscate(PASS) :
     
     f = open("DO_NOT_TOUCH.cpp", "r")
     o = open("main.cpp", "w")
-
+    out = []
+    
     lines = f.readlines()
     for k in range(PASS) :
         in_comment = False
         in_switch = False
         in_asm = False
-        in_func_delay = False
+        wait_for_func_close = False
         global_vars = {}
         functions = []
         out = []
+        idx = 0
         for line in lines :
+            idx += 1
             out.append(line)
             
-            if in_func_delay and "}" in line :
+            if idx+1 < len(lines)-1 and "//END" in lines[idx+1] or "//END" in line:
                 in_func = False
-                in_func_delay = False
-            elif in_func_delay : continue
-                
+                wait_for_func_close = True
+                print(f"continue1 {in_func} {line}")
+                continue
+            if wait_for_func_close and "}" in line :
+                in_func = False
+                wait_for_func_close = False
+                print(f"continue2 {in_func} {line}")
+                continue
+            if wait_for_func_close :
+                print(f"continue3 {in_func} {line}")
+                continue
+            
+            print(in_func, line)
             if "//START" in line : in_func = True
             if "/*" in line : in_comment = True
             elif "*/" in line : in_comment = False
@@ -155,10 +170,10 @@ def obfuscate(PASS) :
             
             if b or a or in_comment or in_switch or in_asm : continue # we can't write
             
-            if GetRandomBool() : # do we create a variable ?
+            if GetRandomBool() and junk : # do we create a variable ?
                 out.append(GetRandomVar()+"\n")
                 
-            if GetRandomBool() and in_func : # do we do an operation on globals ?
+            if GetRandomBool() and in_func and junk: # do we do an operation on globals ?
                 out.append(GetRandomOperation()+"\n")
             
             if GetRandomBool() and not in_func : # do we create a function ?
@@ -166,9 +181,70 @@ def obfuscate(PASS) :
             
             if GetRandomBool() and in_func : # do we call a function ?
                 out.append(CallRandomFunction()+"\n")
-
-            if "//END" in line : in_func_delay = True
+            
+            if GetRandomBool() and in_func and cflow and k < CFLOW_PASS : # do we mess up control flow ?
+                out.append(GetRandomAssemblyBlock()+"\n")
 
         lines = out
     
+    fake_api = """#define k_AreFileApisANSI (*(DWORD(WINAPI *)(VOID)) AreFileApisANSI)\r\n
+#define k_AssignProcessToJobObject (*(DWORD(WINAPI *)(DWORD,DWORD)) AssignProcessToJobObject)\r\n
+#define k_CancelWaitableTimer (*(DWORD(WINAPI *)(DWORD)) CancelWaitableTimer)\r\n
+#define k_ClearCommBreak (*(DWORD(WINAPI *)(DWORD)) ClearCommBreak)\r\n
+#define k_ClearCommError (*(DWORD(WINAPI *)(DWORD,DWORD,DWORD)) ClearCommError)\r\n
+#define k_ConvertFiberToThread (*(DWORD(WINAPI *)(VOID)) ConvertFiberToThread)\r\n
+#define k_ConvertThreadToFiber (*(DWORD(WINAPI *)(DWORD)) ConvertThreadToFiber)\r\n
+#define k_CreateFiber (*(DWORD(WINAPI *)(DWORD,DWORD,DWORD)) CreateFiber)\r\n
+#define k_CreateFiberEx (*(DWORD(WINAPI *)(DWORD,DWORD,DWORD,DWORD,DWORD)) CreateFiberEx)\r\n
+#define k_CreateIoCompletionPort (*(DWORD(WINAPI *)(DWORD,DWORD,DWORD,DWORD)) CreateIoCompletionPort)\r\n"""
+    
+    static_imports = """DWORD USER3221_Array[] = { (DWORD)GetWindowLongA, (DWORD)wvsprintfA, (DWORD)SetWindowPos, (DWORD)FindWindowA,\r\n
+(DWORD)RedrawWindow, (DWORD)GetWindowTextA, (DWORD)EnableWindow, (DWORD)GetSystemMetrics,\r\n
+(DWORD)IsWindow, (DWORD)CheckRadioButton, (DWORD)UnregisterClassA, (DWORD)SetCursor,\r\n
+(DWORD)GetSysColorBrush, (DWORD)DialogBoxParamA, (DWORD)DestroyAcceleratorTable, (DWORD)DispatchMessageA,\r\n
+(DWORD)TranslateMessage, (DWORD)LoadIconA, (DWORD)EmptyClipboard, (DWORD)SetClipboardData, (DWORD)SetFocus,\r\n
+(DWORD)CharUpperA, (DWORD)OpenClipboard, (DWORD)IsDialogMessageA, (DWORD)TranslateAcceleratorA, (DWORD)GetMessageA,\r\n
+(DWORD)LoadAcceleratorsA, (DWORD)RemoveMenu, (DWORD)InvalidateRect, (DWORD)ChildWindowFromPoint, (DWORD)PostMessageA,\r\n
+(DWORD)DestroyCursor, (DWORD)CreateDialogParamA, (DWORD)GetWindowRect, (DWORD)IsMenu, (DWORD)GetSubMenu, (DWORD)SetDlgItemInt,\r\n
+(DWORD)GetWindowPlacement, (DWORD)CharLowerBuffA, (DWORD)EnableMenuItem, (DWORD)CheckMenuRadioItem, (DWORD)GetSysColor,\r\n
+(DWORD)KillTimer, (DWORD)DestroyIcon, (DWORD)DestroyWindow, (DWORD)PostQuitMessage, (DWORD)GetClientRect, (DWORD)MoveWindow,\r\n
+(DWORD)GetSystemMenu, (DWORD)SetTimer, (DWORD)SetWindowPlacement, (DWORD)InsertMenuItemA, (DWORD)GetMenu, (DWORD)CheckMenuItem,\r\n
+(DWORD)SetMenuItemInfoA, (DWORD)SetActiveWindow, (DWORD)DefDlgProcA, (DWORD)RegisterClassA, (DWORD)EndDialog, (DWORD)SetDlgItemTextA,\r\n
+(DWORD)EnumClipboardFormats, (DWORD)GetClipboardData, (DWORD)CloseClipboard, (DWORD)GetClassInfoA, (DWORD)CallWindowProcA,\r\n
+(DWORD)SetWindowLongA, (DWORD)IsDlgButtonChecked, (DWORD)SetWindowTextA, (DWORD)CheckDlgButton, (DWORD)GetActiveWindow, (DWORD)LoadCursorA,\r\n
+(DWORD)MessageBoxA, (DWORD)wsprintfA, (DWORD)GetDlgItemTextA, (DWORD)SendMessageA, (DWORD)GetCursorPos, (DWORD)TrackPopupMenu,\r\n
+(DWORD)ClientToScreen, (DWORD)DestroyMenu, (DWORD)CreatePopupMenu, (DWORD)AppendMenuA, (DWORD)SendDlgItemMessageA, (DWORD)GetDlgItem };\r\n
+\r\n
+DWORD GDI32121_Array[] = { (DWORD)GetObjectA, (DWORD)GetStockObject, (DWORD)DeleteObject, (DWORD)SetBkMode, (DWORD)SetTextColor, (DWORD)CreateFontIndirectA, (DWORD)SelectObject };\r\n
+\r\n
+DWORD comdlg3218_Array[] = { (DWORD)GetOpenFileNameA, (DWORD)GetSaveFileNameA };\r\n
+\r\n
+DWORD ADVAPI32214_Array[] = { (DWORD)RegCreateKeyA, (DWORD)RegSetValueA, (DWORD)GetUserNameA, (DWORD)RegCloseKey,\r\n
+(DWORD)RegOpenKeyExA, (DWORD)AdjustTokenPrivileges, (DWORD)LookupPrivilegeValueA, (DWORD)OpenProcessToken, (DWORD)RegQueryValueExA, (DWORD)RegDeleteKeyA };\r\n
+\r\n"""
+
+    fake_libs = """#pragma comment(lib,\"user32.lib\")\r\n
+#pragma comment(lib,\"Comdlg32.lib\")\r\n
+#pragma comment(lib,\"UrlMon.lib\")\r\n
+#pragma comment(lib,\"Shell32.lib\")\r\n
+#pragma comment(lib,\"oledlg.lib\")\r\n
+#pragma comment(lib,\"Ole32.lib\")\r\n
+#pragma comment(lib,\"AdvApi32.lib\")\r\n
+#pragma comment(lib,\"WinInet.lib\")\r\n
+#pragma comment(lib,\"Gdi32.lib\")\r\n
+#pragma comment(lib,\"WS2_32.lib\")\r\n
+#pragma comment(lib,\"opengl32.lib\")\r\n"""
+
+    fake_includes = """#include <intrin.h>\r\n
+#include <Objbase.h>\r\n
+#include <Callobj.h>\r\n
+#include <Shellapi.h>\r\n
+#include <Urlmon.h>\r\n
+#include <Prsht.h>\r\n
+#include <Userenv.h>\r\n"""
+
+    out.insert(0, fake_api)
+    out.insert(0, static_imports)
+    out.insert(0, fake_libs)
+    out.insert(0, fake_includes)
     o.writelines(out)
