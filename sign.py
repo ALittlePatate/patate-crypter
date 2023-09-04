@@ -56,8 +56,7 @@ def sign(filename) :
         certificate_data = cert_file.read()
 
     # Load the .exe file to be signed
-    exe_to_sign = 'sample_out.exe'
-    with open(exe_to_sign, 'rb') as exe_file:
+    with open(filename, 'rb') as exe_file:
         exe_data = exe_file.read()
 
     # Compute the SHA-256 hash of the .exe file
@@ -78,7 +77,7 @@ def sign(filename) :
     with open(signed_exe_filename, 'wb') as signed_exe_file:
         signed_exe_file.write(signed_exe)
 
-    print(f"Successfully signed {exe_to_sign}.")
+    print(f"Successfully signed {filename}.")
 
     os.remove("selfsigned.crt")
     os.remove("private.key")

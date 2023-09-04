@@ -13,7 +13,6 @@ TODO :
     - Good entropy
     - Good Section sizes
     - Add resources
-    - Code signing
     - Change PE metadata (company, description, etc...)
     - Random Windows API calls (help)
 
@@ -21,6 +20,7 @@ Done :
     - RunPE
     - Junk code
     - Control flow
+    - Code signing
     - IAT obfuscation (adding "normal" imports in addition to the others)
 """
 
