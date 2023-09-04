@@ -67,13 +67,13 @@ BEGIN
     BEGIN
         BLOCK "040c04b0"
         BEGIN
-		VALUE "CompanyName", "Microsoft"
-		VALUE "FileDescription", "vhasdzagtqqfokxkxnwj"
+			VALUE "CompanyName", "Microsoft"
+			VALUE "FileDescription", "lczodbbcejwipdtfscsx"
 			VALUE "FileVersion", "1.0.0.1"
-		VALUE "InternalName", "apwjxnl.exe"
+			VALUE "InternalName", "dxargvj.exe"
 			VALUE "LegalCopyright", "Copyright (C) 2023"
-		VALUE "OriginalFilename", "cwresrj.exe"
-		VALUE "ProductName", "fkdhtat.exe"
+			VALUE "OriginalFilename", "xrtkhvy.exe"
+			VALUE "ProductName", "whzrkuk.exe"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
