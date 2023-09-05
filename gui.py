@@ -10,7 +10,6 @@
 """
 TODO :
     - LoadPE (KEKW)
-    - Good entropy
     - Good Section sizes
     - Random Windows API calls (help)
     
@@ -22,7 +21,8 @@ Done :
     - Change PE metadata (company, description, etc...)
     - File icon
     - Code signing
-    - Add resources (random number of random generated bitmaps)
+    - Good entropy
+    - Add resources (random number of random generated bitmaps) --> Not used because it increases the entropy too much
 """
 
 from PyQt5 import QtCore, QtGui, QtWidgets

@@ -25,7 +25,7 @@ def generate_bmp(filename):
     img.save(filename, 'BMP')
         
 def change_metadata(icon_file) :
-    number_of_bmp = GetRandomRange(2, 6)
+    number_of_bmp = 0#GetRandomRange(2, 6) makes the entropy go to 7.4 for ONE image, so very very very bad
     f = open("DllExecutor.rc", "r")
     f_c = f.readlines()
     f.close()
@@ -47,13 +47,19 @@ def change_metadata(icon_file) :
         elif "ProductName" in line :
             line = f'\t\t\tVALUE "ProductName", "{GetRandomString(7)}.exe"\n'
         
-        elif "MAINICON" in line and icon_file != "":
-            line = f'MAINICON ICON "{icon_file}"\n'
+        elif "MAINICON" in line :
+            if icon_file != "" :
+                line = f'MAINICON ICON "{icon_file}"\n'
+            else :
+                line = f'//MAINICON ICON "{icon_file}"\n'
+                
             for i in range(number_of_bmp) :
                 bmp_name = f"img_{i}.bmp"
                 generate_bmp(bmp_name)
                 line += f'{GetRandomString(10)} BITMAP "{bmp_name}"\n'
-            
+                
+        elif "BITMAP" in line : line = ""
+        
         o.write(line)
         
     o.close()

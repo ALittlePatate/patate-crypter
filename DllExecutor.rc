@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040c04b0"
         BEGIN
 			VALUE "CompanyName", "Microsoft"
-			VALUE "FileDescription", "ukulyvqunljimnyxqudx"
+			VALUE "FileDescription", "sblujwzduxlhnhmiyiri"
 			VALUE "FileVersion", "1.0.0.1"
-			VALUE "InternalName", "pcqqadv.exe"
+			VALUE "InternalName", "tkedqel.exe"
 			VALUE "LegalCopyright", "Copyright (C) 2023"
-			VALUE "OriginalFilename", "ayhotiz.exe"
-			VALUE "ProductName", "eskjmbf.exe"
+			VALUE "OriginalFilename", "lgeagvp.exe"
+			VALUE "ProductName", "aejcvay.exe"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
@@ -84,10 +84,6 @@ BEGIN
 END
 
 MAINICON ICON "C:/Users/patate/Desktop/Programmation/C++/Low-Level/RunPE/icon.ico"
-zoixzyunsm BITMAP "img_0.bmp"
-kzciawmlhq BITMAP "img_1.bmp"
-nzixriywxl BITMAP "img_2.bmp"
-iumfepnhqj BITMAP "img_3.bmp"
 #endif
 /////////////////////////////////////////////////////////////////////////////
 
