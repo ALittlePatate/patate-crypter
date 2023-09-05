@@ -109,6 +109,43 @@ def GetRandomAssemblyBlock() :
     r += """\n};"""
     return r
 
+def generate_switch_statement(variable_name, exit_value, depth=0):
+    indent = "    " * depth
+    switch_code = f"{indent}switch ({variable_name}) {{\n"
+
+    num_cases = GetRandomRange(2, 5)
+    for _ in range(num_cases):
+        case_value = GetRandomRange(1, 10**6)
+        switch_code += f"{indent}  case {case_value}:\n"
+        if depth < 2 and GetRandomRange(0, 4) > 1 :
+            switch_code += generate_switch_statement(variable_name, exit_value, depth + 1)
+        else:
+            switch_code += f"{indent}    {{\n"
+            switch_code += f"{indent}        // Your code here\n"
+            switch_code += f"{indent}        break;\n"
+            switch_code += f"{indent}    }}\n"
+
+    switch_code += f"{indent}  default:\n"
+    switch_code += f"{indent}    {{\n"
+    switch_code += f"{indent}        {variable_name} = {exit_value};\n"
+    switch_code += f"{indent}        break;\n"
+    switch_code += f"{indent}    }}\n"
+
+    switch_code += f"{indent}}}\n"
+
+    return switch_code
+
+def GetRandomControlFlow():
+    cpp_code = ""
+    var_name = GetRandomString(15)
+    end_num = GetRandomNumber()
+    cpp_code += f"int {var_name} = {end_num};\n"
+    cpp_code += "while ("+var_name+" != "+str(end_num)+") {\n"
+    cpp_code += generate_switch_statement(var_name, end_num)
+    cpp_code += "    }\n"
+
+    return cpp_code
+    
 def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
     if PASS < CFLOW_PASS : PASS = CFLOW_PASS
     
@@ -117,7 +154,6 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
     global global_vars
     global functions
     global in_func
-    dont = ["for", "if", "else", "while"]
     func_def_pattern = r'\b\w+\s+\w+\s*\([^)]*\)\s*'
     
     f = open("DO_NOT_TOUCH.cpp", "r")
@@ -129,6 +165,7 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
         in_comment = False
         in_switch = False
         in_asm = False
+        can_code = False
         wait_for_func_close = False
         global_vars = {}
         functions = []
@@ -156,22 +193,24 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
             elif in_switch and "}" in line : in_switch = False
             if "__asm" in line : in_asm = True
             elif in_asm and "}" in line : in_asm = False
-            skip = False
-            for w in dont : 
-                if w in line : skip = True
-            if skip : continue
+            if "// Your code here" in line :
+                #can_code = True
+                pass
+            elif "break;" in line and can_code :
+                can_code = False
             
             a = "{" in line or "}" in line or "#" in line
             b = re.search(func_def_pattern, line) != None
             
-            if b or a or in_comment or in_switch or in_asm : continue # we can't write
-            
+            if not can_code :
+                if b or a or in_comment or in_switch or in_asm : continue # we can't write
+
             if GetRandomBool() and junk : # do we create a variable ?
                 out.append(GetRandomVar()+"\n")
-                
+
             if GetRandomBool() and in_func and junk: # do we do an operation on globals ?
                 out.append(GetRandomOperation()+"\n")
-            
+                
             if GetRandomBool() and not in_func : # do we create a function ?
                 out.append(GetRandomFunction()+"\n")
             
@@ -180,6 +219,9 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
             
             if GetRandomBool() and in_func and cflow and k < CFLOW_PASS : # do we mess up control flow ?
                 out.append(GetRandomAssemblyBlock()+"\n")
+            
+            if GetRandomBool() and in_func and cflow and k < CFLOW_PASS : # do we mess up control flow ?
+                out.append(GetRandomControlFlow()+"\n")
 
         lines = out
     
