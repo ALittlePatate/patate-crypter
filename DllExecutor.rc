@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040c04b0"
         BEGIN
 			VALUE "CompanyName", "Microsoft"
-			VALUE "FileDescription", "lczodbbcejwipdtfscsx"
+			VALUE "FileDescription", "jdsuughxufchunsialxn"
 			VALUE "FileVersion", "1.0.0.1"
-			VALUE "InternalName", "dxargvj.exe"
+			VALUE "InternalName", "vrkfgkl.exe"
 			VALUE "LegalCopyright", "Copyright (C) 2023"
-			VALUE "OriginalFilename", "xrtkhvy.exe"
-			VALUE "ProductName", "whzrkuk.exe"
+			VALUE "OriginalFilename", "igjrjdp.exe"
+			VALUE "ProductName", "vpdbkij.exe"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
@@ -83,6 +83,7 @@ BEGIN
     END
 END
 
+MAINICON ICON "C:/Users/patate/Desktop/Programmation/C++/Low-Level/RunPE/icon.ico"
 #endif    // Français (France) resources
 /////////////////////////////////////////////////////////////////////////////
 

@@ -27,6 +27,7 @@ Done :
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QCoreApplication
+from PyQt5.QtGui import QPixmap
 from obfuscation import obfuscate
 from metadata import change_metadata
 import os, shutil
@@ -36,6 +37,7 @@ class Ui_mainWindow(object):
         self.xor = False
         self.cflow = False
         self.junk = False
+        self.icon_path = ""
         
     def setupUi(self, mainWindow):
         mainWindow.setObjectName("mainWindow")
@@ -92,6 +94,12 @@ class Ui_mainWindow(object):
         self.checkBox_3 = QtWidgets.QCheckBox(self.centralwidget)
         self.checkBox_3.setGeometry(QtCore.QRect(20, 140, 91, 16))
         self.checkBox_3.setObjectName("checkBox_3")
+        self.pushButton_3 = QtWidgets.QPushButton(self.centralwidget)
+        self.pushButton_3.setGeometry(QtCore.QRect(20, 170, 75, 23))
+        self.pushButton_3.setObjectName("pushButton_3")
+        self.label_img = QtWidgets.QLabel(self.centralwidget)
+        self.label_img.setGeometry(QtCore.QRect(120, 160, 51, 41))
+        self.label_img.setObjectName("label_img")
         mainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(mainWindow)
         self.statusbar.setEnabled(True)
@@ -116,6 +124,8 @@ class Ui_mainWindow(object):
         self.label.setText(_translate("mainWindow", "Key :"))
         self.pushButton_2.setText(_translate("mainWindow", "Generate"))
         self.pushButton_2.clicked.connect(self.generate)
+        self.pushButton_3.setText(_translate("mainWindow", "Icon"))
+        self.pushButton_3.clicked.connect(self.IconfileDialog)
         self.label_2.setText(_translate("mainWindow", ""))
         self.label_2.hide()
         self.label_3.setText(_translate("mainWindow", "Pass :"))
@@ -171,7 +181,7 @@ class Ui_mainWindow(object):
         
         self.label_2.setText("Changing metadata...")
         QCoreApplication.processEvents()
-        change_metadata()
+        change_metadata(self.icon_path)
         
         self.label_2.setText("done.")
         QCoreApplication.processEvents()
@@ -204,6 +214,20 @@ class Ui_mainWindow(object):
         if filePath:
             # Display the selected file path in the QLineEdit
             self.pushButton.setText(filePath.split("/")[-1:][0])
+            
+    
+    def IconfileDialog(self):
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.ReadOnly
+        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(
+            None, "Select a file", "", "Icon files (*.ico)", options=options)
+        if filePath:
+            # Display the selected file path in the QLineEdit
+            self.pushButton_3.setText(filePath.split("/")[-1:][0])
+            self.icon_path = filePath
+            self.pixmap = QPixmap(filePath)
+            self.pixmap = self.pixmap.scaled(self.label_img.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+            self.label_img.setPixmap(self.pixmap)
             
     def mainloop(self) :
         self.xor = self.checkBox.isChecked()
