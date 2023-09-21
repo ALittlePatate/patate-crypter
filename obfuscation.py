@@ -81,7 +81,7 @@ def GetAsmBlock(branch1, branch2, var, end, sub) :
 	"""+branch1+""":"""
     
     
-    if GetRandomRange(0, 4) > 2 :
+    if GetRandomRange(0, 4) > 1 :
         branch1 = GetRandomString(20)
         branch2_ = GetRandomString(20)
         asm_block += GetAsmBlock(branch1, branch2_, var, end, sub)
@@ -102,7 +102,7 @@ def GetRandomAssemblyBlock() :
 
     r = """const char* """+var+""" = \""""+GetRandomString(5)+"""\";\n__asm {"""
     
-    for i in range(GetRandomRange(0, 15)) :
+    for i in range(GetRandomRange(0, 30)) :
         branch1 = GetRandomString(20)
         branch2 = GetRandomString(20)
         end = GetRandomString(20)
@@ -115,11 +115,11 @@ def generate_switch_statement(variable_name, exit_value, depth=0):
     indent = "    " * depth
     switch_code = f"{indent}switch ({variable_name}) {{\n"
 
-    num_cases = GetRandomRange(1, 4)
+    num_cases = GetRandomRange(2, 5)
     for _ in range(num_cases):
         case_value = GetRandomRange(1, 10**6)
         switch_code += f"{indent}  case {case_value}:\n"
-        if depth < 2 and GetRandomRange(0, 4) > 2 :
+        if depth < 2 and GetRandomRange(0, 4) > 1 :
             switch_code += generate_switch_statement(variable_name, exit_value, depth + 1)
         else:
             switch_code += f"{indent}    {{\n"

