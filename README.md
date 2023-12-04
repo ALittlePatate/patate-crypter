@@ -26,6 +26,12 @@ Then the stub (at runtime) :
 - rebases the payload to its new base address
 - calls (Dll)main
 
+Here are screenshots of the same function before and after the obfuscation pass :<br>
+Without obfuscation : <br>
+![no_obfuscation](Screenshots/no_obfuscation.png)<br>
+With obfuscation (only showing a few nodes, the original graph was more than 40K nodes) : <br>
+![obfuscated](Screenshots/obfuscated.png)<br>
+
 # How to run
 ```
 python gui.py
