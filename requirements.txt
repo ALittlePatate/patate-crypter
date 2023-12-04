@@ -1,2 +1,3 @@
 OpenSSL
+pillow
 pywin32==302
