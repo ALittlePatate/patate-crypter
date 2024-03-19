@@ -207,6 +207,24 @@ void allo() {
 	//END
 }
 
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    //START
+    switch (uMsg) {
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
+            EndPaint(hwnd, &ps);
+            return 0;
+        } default:
+            return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    }
+    //END
+}
+
 #ifdef _DEBUG
 int main(void)
 #else
@@ -220,20 +238,20 @@ int __stdcall WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR     lpCm
 
     DEBUG_PRINTF("[+] Started\n");
 
-    MEMORYSTATUSEX memoryStatus;
+    MEMORYSTATUSEX memoryStatus = { 0 };
     memoryStatus.dwLength = sizeof(memoryStatus);
     GlobalMemoryStatusEx(&memoryStatus);
     ULONGLONG totalPhysicalMemory = memoryStatus.ullTotalPhys;
 
-    // Convert total physical memory to gigabytes
     double totalPhysicalMemoryGB = static_cast<double>(totalPhysicalMemory) / (1024 * 1024 * 1024);
 
-    // Get the number of processor cores
     SYSTEM_INFO systemInfo;
     GetSystemInfo(&systemInfo);
     DWORD numProcessorCores = systemInfo.dwNumberOfProcessors;
-    if (numProcessorCores < 2 || (int)totalPhysicalMemoryGB < 4)
+    if (numProcessorCores < 2 || (int)totalPhysicalMemoryGB < 4) {
+        MessageBoxA(NULL, "uwu", "failed", 0);
         return 0;
+    }
 
     const int bufferSize = sizeof(sample) / sizeof(sample[0]);
 	

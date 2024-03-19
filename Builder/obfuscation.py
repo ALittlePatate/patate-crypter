@@ -198,7 +198,7 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
                 if "/*" in line : in_comment = True
                 elif "*/" in line : in_comment = False
                 if "switch" in line : in_switch = True
-                elif in_switch and "}" in line : in_switch = False
+                elif in_switch and "}" in line and not "case" in line and not "default" in line : in_switch = False
                 if "__asm" in line : in_asm = True
                 elif in_asm and "}" in line : in_asm = False
                 if "// Your code here" in line :
