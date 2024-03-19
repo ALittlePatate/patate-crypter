@@ -4,14 +4,15 @@ The project structure is **very** messy because i wasn't planning on releasing i
 I will not provide any support for running the program, it is only made for people interested in cyber security to learn more about how AV work.
 
 # Limitations
-patate crypter officially supports 32bit DLLs and PEs. It might be possible to add x64 bit support without too much issues, but i never tried, maybe one day.<br>
+patate crypter officially supports 32bit and 64bit DLLs and PEs.<br>
 There is an issue where the reallocations would fail for specific payloads, TOFIX.<br>
 There is code in the `metadata.py` file to generate random BMP images in the metadata of the PE but it makes the entropy go way to high (from 6.4 to 7.4) (see [link](https://practicalsecurityanalytics.com/file-entropy/)).
 
 # Detection rate
 There is currently 0/40 detections for a crypted meterperter :
 - [original meterpreter](https://www.kleenscan.com/scan_result/6ea55d54a947393082f524215c28185ef90a7ec9cb9c50f25c555715b61b0e3e)
-- [crypted](https://www.kleenscan.com/scan_result/697277eeddc7cf01ffc81430e3c549488e3a96970edb9ec8d96860d9135eac54)
+- [crypted 32 bit](https://www.kleenscan.com/scan_result/697277eeddc7cf01ffc81430e3c549488e3a96970edb9ec8d96860d9135eac54)
+- [crypted 64 bit](https://www.kleenscan.com/scan_result/9c0ae91e19425ff4c2d8120f1cb787f0480c7780faa6e1e57517b2aea831e272)
 
 # How does it work ?
 The crypter (compile time) works by :

