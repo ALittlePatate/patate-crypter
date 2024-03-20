@@ -171,9 +171,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="pi.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
+    <ClInclude Include="pi.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="sample.h" />
   </ItemGroup>

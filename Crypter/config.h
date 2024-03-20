@@ -1,2 +1,2 @@
 #pragma once
-#define KEY "pqihzifvqzidbzq"
+#define KEY "ougoqugduzqd"

