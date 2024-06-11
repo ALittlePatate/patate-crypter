@@ -1,5 +1,6 @@
 *.exe
 *.dll
+*.ico
 .vs
 __pycache__
 bin
