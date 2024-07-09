@@ -150,7 +150,10 @@ class Ui_mainWindow(object):
     def generate(self) :
         is_64bit = False
         in_filename = self.filepath
-        out_filename = "../bin/" + self.filename + "_out.exe"
+        if self.climode :
+            out_filename = self.filename.replace(".exe", "") + "_out.exe"
+        else : 
+            out_filename = "../bin/" + self.filename + "_out.exe"
         xor_key = ''
 
         if self.xor :
