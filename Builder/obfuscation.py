@@ -63,7 +63,8 @@ def GetRandomFunction() :
     body += "\tif (a1 <= (void*)0x00100000) return 0;\n"
     body += "\tchar aaa = ((char)((int)'0' + 1));\n"
     body += f"\tint bb = {GetRandomNumber()};\n"
-    body += "\tfor (int i = 0; i < 10; i++) {\n\t\tCreateMutexA(NULL, false, &aaa);\n\t\tbb++;\n\t}\n\treturn bb;\n}"
+    body += f"\tint r = {GetRandomNumber()};\n"
+    body += "\tfor (int i = 0; i < bb; i++) {\n\t\tr ^= i;\n\t}\n\treturn bb;\n}"
         
     return body
 
