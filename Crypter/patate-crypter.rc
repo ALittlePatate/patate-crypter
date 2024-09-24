@@ -68,12 +68,12 @@ BEGIN
         BLOCK "040c04b0"
         BEGIN
 			VALUE "CompanyName", "Microsoft"
-			VALUE "FileDescription", "cixctkirmfubayfzkbog"
+			VALUE "FileDescription", "dnsfzllrjwhkcwdfijbb"
 			VALUE "FileVersion", "1.0.0.1"
-			VALUE "InternalName", "bcjphkt.exe"
+			VALUE "InternalName", "fbjriet.exe"
 			VALUE "LegalCopyright", "Copyright (C) 2023"
-			VALUE "OriginalFilename", "nybxftw.exe"
-			VALUE "ProductName", "txwfqte.exe"
+			VALUE "OriginalFilename", "pvgcwpf.exe"
+			VALUE "ProductName", "wisjfvx.exe"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
@@ -83,7 +83,7 @@ BEGIN
     END
 END
 
-MAINICON ICON "C:/Users/patate/Desktop/Programmation/C++/Maldev/patate-crypter/icon.ico"
+//MAINICON ICON ""
 #endif
 /////////////////////////////////////////////////////////////////////////////
 

@@ -1,3 +1,5 @@
+typedef struct IUnknown IUnknown;
+
 #include <windows.h>
 #include <cstdio>
 #include <iostream>
@@ -91,13 +93,25 @@ typedef NTSTATUS (NTAPI *NtAllocateVirtualMemoryPtr)(HANDLE ProcessHandle, PVOID
 typedef NTSTATUS (NTAPI *LdrLoadDllPtr)(PWCHAR, ULONG, PUNICODE_STRING, PHANDLE);
 typedef NTSTATUS (NTAPI *RtlInitUnicodeStringPtr)(PUNICODE_STRING DestinationString, PCWSTR SourceString);
 
+typedef struct __TEB {
+    PVOID Reserved1[12];
+    PPEB  ProcessEnvironmentBlock;
+    PVOID Reserved2[399];
+    BYTE  Reserved3[1952];
+    PVOID TlsSlots[64];
+    BYTE  Reserved4[8];
+    PVOID Reserved5[26];
+    PVOID ReservedForOle;
+    PVOID Reserved6[4];
+    PVOID TlsExpansionSlots;
+} TEB_, * PTEB_;
 
 void* get_ntfunction(const char* func) {
     //START
 #ifdef _M_X64
-    PTEB tebPtr = reinterpret_cast<PTEB>(__readgsqword(reinterpret_cast<DWORD_PTR>(&static_cast<NT_TIB*>(nullptr)->Self)));
+    PTEB_ tebPtr = reinterpret_cast<PTEB_>(__readgsqword(reinterpret_cast<DWORD_PTR>(&static_cast<NT_TIB*>(nullptr)->Self)));
 #else
-    PTEB tebPtr = reinterpret_cast<PTEB>(__readfsdword(reinterpret_cast<DWORD_PTR>(&static_cast<NT_TIB*>(nullptr)->Self)));
+    PTEB_ tebPtr = reinterpret_cast<PTEB_>(__readfsdword(reinterpret_cast<DWORD_PTR>(&static_cast<NT_TIB*>(nullptr)->Self)));
 #endif
     
     PPEB_LDR_DATA ldrData = tebPtr->ProcessEnvironmentBlock->Ldr;
@@ -154,6 +168,7 @@ HMODULE RunPE(const void* dll_buffer, size_t dll_size, DWORD newBase)
         return NULL;
     }
 
+    DEBUG_PRINTF("[+] Allocated memory at 0x%p\n", image_base);
     const IMAGE_SECTION_HEADER* section_headers = reinterpret_cast<const IMAGE_SECTION_HEADER*>(nt_headers + 1);
     // Copy the section data to the allocated memory.
     for (WORD i = 0; i < nt_headers->FileHeader.NumberOfSections; ++i) {
