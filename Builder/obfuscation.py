@@ -173,6 +173,7 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk, is64bit) :
             in_switch = False
             in_asm = False
             in_dowhile = False
+            in_struct = False
             can_code = False
             wait_for_func_close = False
             in_debug = False
@@ -202,6 +203,8 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk, is64bit) :
                 elif in_switch and "}" in line and not "case" in line and not "default" in line : in_switch = False
                 if "__asm" in line : in_asm = True
                 elif in_asm and "}" in line : in_asm = False
+                if "struct" in line : in_struct = True
+                elif in_struct and "}" in line : in_struct = False
                 if "// Your code here" in line :
                     #can_code = True
                     pass
@@ -224,7 +227,7 @@ def obfuscate(PASS, CFLOW_PASS, cflow, junk, is64bit) :
                 b = re.search(func_def_pattern, line) != None
                 
                 if not can_code :
-                    if b or a or in_comment or in_switch or in_asm : continue # we can't write
+                    if b or a or in_comment or in_switch or in_asm or in_struct : continue # we can't write
 
                 if GetRandomBool() and junk and k < PASS : # do we create a variable ?
                     out.append(GetRandomVar()+"\n")

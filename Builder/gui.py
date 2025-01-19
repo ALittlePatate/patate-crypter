@@ -153,7 +153,7 @@ class Ui_mainWindow(object):
         if self.climode :
             out_filename = self.filename.replace(".exe", "") + "_out.exe"
         else : 
-            out_filename = "../bin/" + self.filename + "_out.exe"
+            out_filename = "../bin/" + self.filename.replace(".exe", "") + "_out.exe"
         xor_key = ''
 
         if self.xor :
